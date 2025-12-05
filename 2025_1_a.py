@@ -1,6 +1,7 @@
 from typing import Tuple
 NUM_MIN = 0
 NUM_MAX = 99
+TOTAL_NUM = 100
 
 def get_rotation_sign(rotation: str) -> int:
     if rotation == "R":
@@ -8,13 +9,13 @@ def get_rotation_sign(rotation: str) -> int:
     elif rotation == "L":
         return -1
     else:
-        raise(ValueError)
+        raise ValueError(f"Invalid rotation: {rotation}")
 
 def unwind_length(length: int) -> Tuple[int, int]:
     """Handle cases where rotation length is higher than a full rotation"""
     full_rotations = 0
     if length > NUM_MAX:
-        full_rotations, length = divmod(length, NUM_MAX + 1)
+        full_rotations, length = divmod(length, TOTAL_NUM)
     return full_rotations, length
 
 class Rotation:
@@ -23,14 +24,11 @@ class Rotation:
         self.full_rotations, self.length = unwind_length(length)
         self.transform = self.length * sign
 
-    def __repr__(self):
-        f"{self.sign, self.full_rotations, self.transform}"
-
-def get_rotated_position(position: int, rotation: Rotation):
+def get_rotated_position(position: int, rotation: Rotation) -> int:
     new_position = position + rotation.transform
     # Handle crossover 99:0
     if new_position > NUM_MAX or new_position < NUM_MIN:
-        new_position = (position + rotation.transform) % (NUM_MAX + 1)
+        new_position = (position + rotation.transform) % TOTAL_NUM
     return new_position
 
 # Test rotate forward and backwards
@@ -44,10 +42,14 @@ assert get_rotated_position(5, Rotation(1, 100)) == 5
 assert get_rotated_position(5, Rotation(-1, 100)) == 5
 assert get_rotated_position(5, Rotation(1, 200)) == 5
 
-def get_num_full_rotations(position, rotation):
+def get_num_full_rotations(position: int, rotation: Rotation) -> int:
     new_position = position + rotation.transform
     num_full_rotations = rotation.full_rotations
-    if new_position > NUM_MAX or new_position < NUM_MIN:
+    # If new position is crossing over 99:0 then count that as a rotation.
+    # Arrivals and dispatches to and from 0 should not be counted in this 
+    # function; it's captured later when the position is checked for 0.
+    # 99 + 1 should be considered 0, its just hitting 0 from the opposite side.
+    if new_position > (NUM_MAX + 1) or new_position < NUM_MIN and position != 0:
         num_full_rotations += 1
     return num_full_rotations
 
@@ -79,24 +81,26 @@ def count_cross_zero(start_position: int, strings: list[str]) -> int:
         parse_rotation(string) for string in strings
     ]
     position = start_position
-    zeros = 0
-    num_cross_zeros = 0
+    num_zeros = 0
     for rotation in rotations:
-        num_cross_zeros += get_num_full_rotations(position, rotation)
+        num_zeros += get_num_full_rotations(position, rotation)
         position = get_rotated_position(position, rotation)
-    return num_cross_zeros
+        if position == 0:
+            num_zeros += 1
+    return num_zeros
 
 test_string = ["L68", "L30","R48","L5","R60","L55","L1","L99","R14","L82"]
 assert count_zeros(50,test_string) == 3
 assert count_cross_zero(50,test_string) == 6
-assert count_cross_zero(50, ["R1000"]) == 10
-assert count_cross_zero(50, ["L1000", "R50"]) == 11
+assert count_cross_zero(1, ["R999"]) == 10
+assert count_cross_zero(50, ["L999", "R50"]) == 11
 
+#  Thanks to the following thread for these assertion tests. https://www.reddit.com/r/adventofcode/comments/1pbnu0f/2025_day_1_part_2_python_help_on_part_2/
+assert count_cross_zero(50, ["L150", "R50"]) == 2
+assert count_cross_zero(50, ["L150", "L50"]) == 2
 
 with open("input/2025_1.txt", "r") as file:
     lines = file.readlines()
+
 print(f"Part 1:{count_zeros(50,lines)}")
 print(f"Part 2:{count_cross_zero(50,lines)}")
-
-test_string = ["R98", "R99","R100"]
-print(count_cross_zero(1,test_string))
