@@ -16,10 +16,11 @@ def is_invalid_part_1(id_string: str) -> bool:
     if is_odd(length):
         return False
     num_substrings = int(length / 2)
-    id_substrings = [
-        id_string[i * num_substrings : (i + 1) * num_substrings] for i in range(2)
-    ]
-    return all(id_substring == id_substrings[0] for id_substring in id_substrings)
+    id_substrings = (
+        id_string[0 : num_substrings],
+        id_string[num_substrings : 2 * num_substrings],
+    )
+    return id_substrings[0] == id_substrings[1]
 
 
 def is_invalid_part_2(id_string: str) -> bool:
