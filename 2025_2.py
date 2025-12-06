@@ -8,19 +8,32 @@ def is_odd(n: int) -> bool:
 def get_multiples(n: int) -> list[int]:
     return [i for i in range(n // 2, 0, -1) if n % i == 0]
 
+class IDStringCharacteristics:
+    def __init__(self, min_str: str, max_str: str) -> None:
+        self.min_len = len(min_str)
+        self.max_len = len(max_str)
+        self.fixed_len = self.min_len == self.max_len
+        self.odd_len = 1 if is_odd(self.min_len) else -1
+        self.num_substrings: int = int(self.min_len/2)
+        self.multiples = get_multiples(self.max_len)
 
-def is_invalid_part_1(id_string: str) -> bool:
-    length = len(id_string)
-    if length == 1:
-        return False
-    if is_odd(length):
-        return False
-    num_substrings = int(length / 2)
-    id_substrings = (
-        id_string[0 : num_substrings],
-        id_string[num_substrings : 2 * num_substrings],
-    )
-    return id_substrings[0] == id_substrings[1]
+
+def is_invalid_part_1(id_string: str, id_attr: IDStringCharacteristics) -> bool:
+    # Fast route, if all the numbers in the range have a fixed length then we only need to compute
+    # the attributes related to length once. In an ideal world the datastructure would live in cache
+    # and provide fast access.
+    if id_attr.fixed_len:
+        if id_attr.odd_len == 1:
+            id_attr.odd_len *= -1 * id_attr.odd_len
+            return False
+        num_substrings = id_attr.num_substrings
+        return id_string[0 : num_substrings] == id_string[num_substrings : 2 * num_substrings]
+    else:
+        length = len(id_string)
+        if is_odd(length):
+            return False
+        num_substrings = int(length / 2)
+        return id_string[0 : num_substrings] == id_string[num_substrings : 2 * num_substrings]
 
 
 def is_invalid_part_2(id_string: str) -> bool:
@@ -53,7 +66,12 @@ def get_invalid_ids(min_id_str: str, max_id_str: str, part: int) -> list[str]:
     # Loop through each number from min id to max id (+ 1 to account for 0 indexing of range function)
     # Test each of these values whether they are invalid
     if part == 1:
-        return [str(id) for id in range(int(min_id_str), int(max_id_str) + 1) if is_invalid_part_1(str(id))]
+        result = []
+        id_attr = IDStringCharacteristics(min_id_str, max_id_str)
+        for id in range(int(min_id_str), int(max_id_str) + 1):
+            if is_invalid_part_1(str(id), id_attr):
+                result.append(str(id))
+        return result
     elif part == 2:
         return [str(id) for id in range(int(min_id_str), int(max_id_str) + 1) if is_invalid_part_2(str(id))]
     else:
