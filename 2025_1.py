@@ -1,7 +1,9 @@
 from typing import Tuple
+
 NUM_MIN = 0
 NUM_MAX = 99
 TOTAL_NUM = 100
+
 
 def get_rotation_sign(rotation: str) -> int:
     if rotation == "R":
@@ -11,6 +13,7 @@ def get_rotation_sign(rotation: str) -> int:
     else:
         raise ValueError(f"Invalid rotation: {rotation}")
 
+
 def unwind_length(length: int) -> Tuple[int, int]:
     """Handle cases where rotation length is higher than a full rotation"""
     full_rotations = 0
@@ -18,11 +21,13 @@ def unwind_length(length: int) -> Tuple[int, int]:
         full_rotations, length = divmod(length, TOTAL_NUM)
     return full_rotations, length
 
+
 class Rotation:
     def __init__(self, sign: int, length: int):
         self.sign = sign
         self.full_rotations, self.length = unwind_length(length)
         self.transform = self.length * sign
+
 
 def get_rotated_position(position: int, rotation: Rotation) -> int:
     new_position = position + rotation.transform
@@ -30,6 +35,7 @@ def get_rotated_position(position: int, rotation: Rotation) -> int:
     if new_position > NUM_MAX or new_position < NUM_MIN:
         new_position = (position + rotation.transform) % TOTAL_NUM
     return new_position
+
 
 # Test rotate forward and backwards
 assert get_rotated_position(50, Rotation(1, 5)) == 55
@@ -42,21 +48,24 @@ assert get_rotated_position(5, Rotation(1, 100)) == 5
 assert get_rotated_position(5, Rotation(-1, 100)) == 5
 assert get_rotated_position(5, Rotation(1, 200)) == 5
 
+
 def get_num_full_rotations(position: int, rotation: Rotation) -> int:
     new_position = position + rotation.transform
     num_full_rotations = rotation.full_rotations
     # If new position is crossing over 99:0 then count that as a rotation.
-    # Arrivals and dispatches to and from 0 should not be counted in this 
+    # Arrivals and dispatches to and from 0 should not be counted in this
     # function; it's captured later when the position is checked for 0.
     # 99 + 1 should be considered 0, its just hitting 0 from the opposite side.
     if new_position > (NUM_MAX + 1) or new_position < NUM_MIN and position != 0:
         num_full_rotations += 1
     return num_full_rotations
 
+
 # Test detection of normal crossover
-assert get_num_full_rotations(95, Rotation(1,10)) == 1
-assert get_num_full_rotations(95, Rotation(1,110)) == 2
-assert get_num_full_rotations(5, Rotation(-1,300)) == 3
+assert get_num_full_rotations(95, Rotation(1, 10)) == 1
+assert get_num_full_rotations(95, Rotation(1, 110)) == 2
+assert get_num_full_rotations(5, Rotation(-1, 300)) == 3
+
 
 def parse_rotation(line: str) -> Rotation:
     rotation_dir = line[0]
@@ -64,10 +73,9 @@ def parse_rotation(line: str) -> Rotation:
     rotation_len = int(line[1:])
     return Rotation(rotation_sign, rotation_len)
 
+
 def count_zeros(start_position: int, strings: list[str]) -> int:
-    rotations = [
-        parse_rotation(string) for string in strings
-    ]
+    rotations = [parse_rotation(string) for string in strings]
     position = start_position
     zeros = 0
     for rotation in rotations:
@@ -76,10 +84,9 @@ def count_zeros(start_position: int, strings: list[str]) -> int:
             zeros += 1
     return zeros
 
+
 def count_cross_zero(start_position: int, strings: list[str]) -> int:
-    rotations = [
-        parse_rotation(string) for string in strings
-    ]
+    rotations = [parse_rotation(string) for string in strings]
     position = start_position
     num_zeros = 0
     for rotation in rotations:
@@ -89,9 +96,10 @@ def count_cross_zero(start_position: int, strings: list[str]) -> int:
             num_zeros += 1
     return num_zeros
 
-test_string = ["L68", "L30","R48","L5","R60","L55","L1","L99","R14","L82"]
-assert count_zeros(50,test_string) == 3
-assert count_cross_zero(50,test_string) == 6
+
+test_string = ["L68", "L30", "R48", "L5", "R60", "L55", "L1", "L99", "R14", "L82"]
+assert count_zeros(50, test_string) == 3
+assert count_cross_zero(50, test_string) == 6
 assert count_cross_zero(1, ["R999"]) == 10
 assert count_cross_zero(50, ["L999", "R50"]) == 11
 

@@ -8,14 +8,15 @@ def is_odd(n: int) -> bool:
 def get_multiples(n: int) -> list[int]:
     return [i for i in range(n // 2, 0, -1) if n % i == 0]
 
+
 class IDStringCharacteristics:
     def __init__(self, min_str: str, max_str: str) -> None:
         self.min_len = len(min_str)
         self.max_len = len(max_str)
         self.fixed_len = self.min_len == self.max_len
         self.odd_len = 1 if is_odd(self.min_len) else -1
-        self.num_substrings: int = int(self.min_len/2)
         self.multiples = get_multiples(self.max_len)
+        self.num_substrings: int = int(self.min_len / 2)
 
 
 def is_invalid_part_1(id_string: str, id_attr: IDStringCharacteristics) -> bool:
@@ -27,29 +28,51 @@ def is_invalid_part_1(id_string: str, id_attr: IDStringCharacteristics) -> bool:
             id_attr.odd_len *= -1 * id_attr.odd_len
             return False
         num_substrings = id_attr.num_substrings
-        return id_string[0 : num_substrings] == id_string[num_substrings : 2 * num_substrings]
+        return (
+            id_string[0:num_substrings]
+            == id_string[num_substrings : 2 * num_substrings]
+        )
     else:
         length = len(id_string)
         if is_odd(length):
             return False
         num_substrings = int(length / 2)
-        return id_string[0 : num_substrings] == id_string[num_substrings : 2 * num_substrings]
+        return (
+            id_string[0:num_substrings]
+            == id_string[num_substrings : 2 * num_substrings]
+        )
 
 
-def is_invalid_part_2(id_string: str) -> bool:
-    length = len(id_string)
-    if length == 1:
-        return False
-    multiples = get_multiples(length)
-    for multiple in multiples:
-        num_substrings = int(length / multiple)
-        if num_substrings == 1:
-            continue
-        id_substrings = [
-            id_string[i * multiple : (i + 1) * multiple] for i in range(num_substrings)
-        ]
-        if all(id_substring == id_substrings[0] for id_substring in id_substrings):
-            return True
+def is_invalid_part_2(id_string: str, id_attr: IDStringCharacteristics) -> bool:
+    if id_attr.fixed_len:
+        length = id_attr.min_len
+        if length == 1:
+            return False
+        for multiple in id_attr.multiples:
+            num_substrings = int(length / multiple)
+            if num_substrings == 1:
+                continue
+            id_substrings = [
+                id_string[i * multiple : (i + 1) * multiple]
+                for i in range(num_substrings)
+            ]
+            if all(id_substring == id_substrings[0] for id_substring in id_substrings):
+                return True
+    else:
+        length = len(id_string)
+        if length == 1:
+            return False
+        multiples = get_multiples(length)
+        for multiple in multiples:
+            num_substrings = int(length / multiple)
+            if num_substrings == 1:
+                continue
+            id_substrings = [
+                id_string[i * multiple : (i + 1) * multiple]
+                for i in range(num_substrings)
+            ]
+            if all(id_substring == id_substrings[0] for id_substring in id_substrings):
+                return True
     return False
 
 
@@ -60,20 +83,25 @@ def get_str_range(min: int, max: int) -> list[str]:
 
 def parse_range_ids(string: str) -> tuple[str, str]:
     min_str, max_str = string.split("-")
-    return min_str,max_str
+    return min_str, max_str
+
 
 def get_invalid_ids(min_id_str: str, max_id_str: str, part: int) -> list[str]:
     # Loop through each number from min id to max id (+ 1 to account for 0 indexing of range function)
     # Test each of these values whether they are invalid
+    id_attr = IDStringCharacteristics(min_id_str, max_id_str)
     if part == 1:
         result = []
-        id_attr = IDStringCharacteristics(min_id_str, max_id_str)
         for id in range(int(min_id_str), int(max_id_str) + 1):
             if is_invalid_part_1(str(id), id_attr):
                 result.append(str(id))
         return result
     elif part == 2:
-        return [str(id) for id in range(int(min_id_str), int(max_id_str) + 1) if is_invalid_part_2(str(id))]
+        result = []
+        for id in range(int(min_id_str), int(max_id_str) + 1):
+            if is_invalid_part_2(str(id), id_attr):
+                result.append(str(id))
+        return result
     else:
         raise ValueError(f"Invalid part: {part}")
 
