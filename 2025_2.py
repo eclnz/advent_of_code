@@ -44,16 +44,17 @@ def get_str_range(min: int, max: int) -> list[str]:
     return [str(integer) for integer in integers]
 
 
-def parse_range_ids(string: str) -> list[str]:
+def parse_range_ids(string: str) -> tuple[str, str]:
     min_str, max_str = string.split("-")
-    return get_str_range(int(min_str), int(max_str))
+    return min_str,max_str
 
-
-def get_invalid_ids(strings: list[str], part: int) -> list[str]:
+def get_invalid_ids(min_id_str: str, max_id_str: str, part: int) -> list[str]:
+    # Loop through each number from min id to max id (+ 1 to account for 0 indexing of range function)
+    # Test each of these values whether they are invalid
     if part == 1:
-        return [s for s in strings if is_invalid_part_1(s)]
+        return [str(id) for id in range(int(min_id_str), int(max_id_str) + 1) if is_invalid_part_1(str(id))]
     elif part == 2:
-        return [s for s in strings if is_invalid_part_2(s)]
+        return [str(id) for id in range(int(min_id_str), int(max_id_str) + 1) if is_invalid_part_2(str(id))]
     else:
         raise ValueError(f"Invalid part: {part}")
 
@@ -61,8 +62,8 @@ def get_invalid_ids(strings: list[str], part: int) -> list[str]:
 def get_id_total(strings: list[str], part: int) -> int:
     sum = 0
     for string in strings:
-        all_ids = parse_range_ids(string)
-        invalid_ids = get_invalid_ids(all_ids, part)
+        min_id, max_id = parse_range_ids(string)
+        invalid_ids = get_invalid_ids(min_id, max_id, part)
         sum += np.sum([int(id) for id in invalid_ids])
     return int(sum)
 
