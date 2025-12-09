@@ -1,55 +1,27 @@
 using BenchmarkTools
 
-function get_indices_range(total_length::Int, num_digits::Int, digit_position::Int)
-    start_idx = digit_position
-    end_idx = min(total_length, total_length - num_digits + digit_position)
-    return start_idx:end_idx
-end
-
-function find_max_joltage(string::String)
-    sort_ind_batteries = sortperm(collect(string), rev = true)
-    if sort_ind_batteries[1] != length(string)
-        highest_index = sort_ind_batteries[1]
-        second_index = highest_index
-        for ind in sort_ind_batteries[2:end]
-            if ind > highest_index
-                second_index = ind
-                break
-            end
-        end
-    else
-        highest_index = sort_ind_batteries[2]
-        second_index = sort_ind_batteries[1]
-    end
-    return parse(Int, string[highest_index] * string[second_index])
-end
-
 function find_max_joltage_pt_2(string::String, j_digits::Int)
     battery_num_array = parse.(Int, collect(string))
     out_index = zeros(Int, j_digits)
     out_joltage = zeros(Int, j_digits)
     for digit in 1:j_digits
-        possible_indices = get_indices_range(length(string), j_digits, digit)
+        start_idx = digit
+        end_idx = min(length(string), length(string) - j_digits + digit)
+        possible_indices = start_idx:end_idx
         sorted = sortperm(battery_num_array[possible_indices], rev=true) .+ (digit - 1)
         for sorted_ind in sorted
-            if !(sorted_ind in out_index) && (sorted_ind > maximum(out_index))
+            if sorted_ind > maximum(out_index)
                 out_index[digit] = sorted_ind
                 out_joltage[digit] = battery_num_array[sorted_ind]
                 break
             end
         end
     end
-
     return parse(Int, join(out_joltage))
 end
 
 function total_joltage(battery_vec::Vector{String})
-    total = 0
-    for string in battery_vec
-        max_joltage = find_max_joltage_pt_2(string, 12)
-        total += max_joltage
-    end
-    return total
+    return sum(string -> find_max_joltage_pt_2(string, 12), battery_vec)
 end
 
 @assert find_max_joltage_pt_2("987654321111111", 12) == 987654321111
@@ -59,7 +31,6 @@ end
 
 function main()
     batteries = readlines("input/2025_3.txt")
-    batteries[end] = replace(batteries[end], "\n" => "")
     result = total_joltage(batteries)
     @btime total_joltage($batteries)
     print(result)
