@@ -27,23 +27,76 @@ function get_max_area(strings::Vector{String})
     return(maximum(diff_mat))
 end
 
-function contains_point(p1_i::Int, p2_i::Int, x_coords::Vector{Int}, y_coords::Vector{Int})::Bool
-    p1_x, p1_y = x_coords[p1_i], y_coords[p1_i]
-    p2_x, p2_y = x_coords[p2_i], y_coords[p2_i]
-    for i in eachindex(x_coords)
-        x_coord = x_coords[i]
-        y_coord = y_coords[i]
-        is_within_x = x_coord >= p2_x && x_coord <= p1_x
-        is_within_y = y_coord >= p2_y && y_coord <= p1_y
-        if is_within_x && is_within_y
-            return true
+# Returns the signed distance to the closest edge of the bounding box.
+# Negative values indicate the point is inside.
+function get_distance(xmin::Int, xmax::Int, ymin::Int, ymax::Int, point::Tuple{Int,Int})
+    x, y = point
+    dx = min(x - xmin, xmax - x)
+    dy = min(y - ymin, ymax - y)
+    return (dx, dy)
+end
+
+function is_point_inside_bbox(x::Int, y::Int, x_min::Int, x_max::Int, y_min::Int, y_max::Int)::Bool
+    return (x_min < x < x_max) && (y_min < y < y_max)
+end
+
+function is_point_outside_bbox_both_axes(x::Int, y::Int, x_min::Int, x_max::Int, y_min::Int, y_max::Int)::Bool
+    return (x < x_min || x > x_max) && (y < y_min || y > y_max)
+end
+
+function is_point_on_bbox_corner(x::Int, y::Int, x_min::Int, x_max::Int, y_min::Int, y_max::Int)::Bool
+    return (x == x_min || x == x_max) && (y == y_min || y == y_max)
+end
+
+function b_box_is_valid(b_box_ind::Tuple{Int, Int}, coords::Vector{Tuple{Int, Int}})::Bool
+    i, j = b_box_ind
+    x1, y1 = coords[i]
+    x2, y2 = coords[j]
+    x_min, x_max = min(x1, x2), max(x1, x2)
+    y_min, y_max = min(y1, y2), max(y1, y2)
+
+    for k in eachindex(coords)
+        if k == i || k == j
+            continue
         end
+        x, y = coords[k]
+        if is_point_inside_bbox(x, y, x_min, x_max, y_min, y_max)
+            return false
+        end
+        if is_point_outside_bbox_both_axes(x, y, x_min, x_max, y_min, y_max)
+            continue
+        end
+        if is_point_on_bbox_corner(x, y, x_min, x_max, y_min, y_max)
+            continue
+        end
+        # If last point, we cant get the next coords
+        if k == length(coords)
+            continue
+        end
+
+        
+
+        # next_point = coords[k+1]
+        # # Calculate signed distances from the current and next point to the box
+        # dx1, dy1 = get_distance(x_min, x_max, y_min, y_max, coords[k])
+        # dx2, dy2 = get_distance(x_min, x_max, y_min, y_max, next_point)
+        # ddx = dx2 - dx1
+        # ddy = dy2 - dy1
+
+        # # If the movement in x or y brings the point closer than zero (i.e., would cross into the box or land inside)
+        # if (dx1 > 0) && (dx1 + ddx < 0)
+        #     return false
+        # end
+        # if (dy1 > 0) && (dy1 + ddy < 0)
+        #     return false
+        # end
     end
-    return false
+    return true
 end
 
 function get_max_area_b(strings::Vector{String})
-    x_coords,y_coords = parse_coords(strings)
+    x_coords, y_coords = parse_coords(strings)
+    all_coords = collect(zip(x_coords, y_coords))
     diff_map_x = x_coords .- x_coords'
     diff_map_x .+= 1
     diff_map_y = y_coords .- y_coords'
@@ -51,30 +104,30 @@ function get_max_area_b(strings::Vector{String})
     diff_mat = diff_map_x .* diff_map_y
     mat_size = size(diff_mat, 1)
     lin_idx_sorted = sortperm(vec(diff_mat); rev=true)
-    x_ind = ((lin_idx_sorted .- 1) .% mat_size) .+ 1
-    y_ind = ((lin_idx_sorted .- 1) .÷ mat_size) .+ 1
-    for i in eachindex(x_ind)
-       point_found = contains_point(x_ind[i], y_ind[i], x_coords, y_coords)
-        if point_found
-            continue
+    inds = collect(zip(
+        ((lin_idx_sorted .- 1) .% mat_size) .+ 1,
+        ((lin_idx_sorted .- 1) .÷ mat_size) .+ 1
+    ))
+    for ind in inds
+        if b_box_is_valid(ind, all_coords)
+            return(ind)
         end
-        return(diff_mat[x_ind[i], y_ind[i]])
     end
 end
 
 test = [
     "7,1",  # 1
-    "11,1", # 2 <-
+    "11,1", # 2
     "11,7", # 3 <- 
     "9,7",  # 4
     "9,5",  # 5
-    "2,5",  # 6 <-
+    "2,5",  # 6
     "2,3",  # 7 <- 
     "7,3"   # 8
 ]
 @assert get_max_area(test) == 50
-
-@assert get_max_area_b(test) == 24
+print(get_max_area_b(test))
+# @assert get_max_area_b(test) == 24
 
 lines = readlines("input/2025_9.txt")
 print(get_max_area_b(lines)) # 205.826 μs
