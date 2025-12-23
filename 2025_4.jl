@@ -26,13 +26,30 @@ function conv_matrix(mat::Matrix{Int})
     return filtered_mat
 end
 
+is_accessible(mat::Matrix{Int}) = (conv_matrix(mat) .< 5) .* mat
+
 function total_rolls(input::Vector{String})
     mat = init_matrix(input)
-    conv_mat = conv_matrix(mat)
-    return sum((conv_mat .< 5) .* mat)
+    return sum(is_accessible(mat))
 end
 
-total_rolls(test)
+function total_iter_rolls(input::Vector{String})
+    mat = init_matrix(input)
+    access_matrix = is_accessible(mat)
+    accessible = sum(access_matrix)
+    total_accessible = accessible
+    while accessible > 0
+        mat .= mat .* ((access_matrix .-1) * .-1)
+        access_matrix = is_accessible(mat)
+        accessible = sum(access_matrix)
+        total_accessible += accessible
+    end
+    return total_accessible
+end
+
+@assert total_rolls(test) == 13
+@assert total_iter_rolls(test) == 43
 
 lines = readlines("input/2025_4.txt")
-total_rolls(lines)
+println(total_rolls(lines))
+println(total_iter_rolls(lines))
