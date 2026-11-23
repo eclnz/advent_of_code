@@ -1,1 +1,4 @@
-/input
+*/inputs
+.DS_Store
+fsharp*
+AGENTS.md
